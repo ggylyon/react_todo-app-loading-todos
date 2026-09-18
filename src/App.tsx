@@ -1,18 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Header } from './components/Header/Header';
 import { Footer } from './components/Footer/Footer';
 import { Notification } from './components/Notification/Notification';
 import { TodoList } from './components/TodoList/TodoList';
 import { Todo } from './types/Todo';
 import { getTodos } from './api/todos';
+import { Filters } from './types/Filters';
 
-function filterBy(todos: Todo[], filterCriteria = 'all') {
+function filterBy(todos: Todo[], filterCriteria = Filters.ALL) {
   switch (filterCriteria) {
-    case 'all':
-      return todos;
-    case 'active':
+    case Filters.ACTIVE:
       return todos.filter(todo => !todo.completed);
-    case 'completed':
+    case Filters.COMPLETED:
       return todos.filter(todo => todo.completed);
     default:
       return todos;
@@ -21,17 +20,20 @@ function filterBy(todos: Todo[], filterCriteria = 'all') {
 
 export const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [filterCriteria, setFilterCriteria] = useState('all');
+  const [filterCriteria, setFilterCriteria] = useState<Filters>(Filters.ALL);
   const filteredTodos = filterBy(todos, filterCriteria);
   const uncompletedTodos = todos.filter(todo => !todo.completed).length;
 
   const [notificationText, setNotificationText] = useState('');
   const [isNotificationVisible, setIsNotificationVisible] = useState(false);
 
-  const handleNotification = () => {
+  let notificationID = setTimeout(() => {});
+
+  const handleNotification = useRef(() => {
+    clearInterval(notificationID);
     setIsNotificationVisible(true);
-    setTimeout(() => setIsNotificationVisible(false), 3000);
-  };
+    notificationID = setTimeout(() => setIsNotificationVisible(false), 3000);
+  });
 
   useEffect(() => {
     getTodos()
@@ -51,7 +53,7 @@ export const App: React.FC = () => {
       })
       .catch(() => {
         setNotificationText('Unable to load todos');
-        handleNotification();
+        handleNotification.current();
       });
   }, []);
 
